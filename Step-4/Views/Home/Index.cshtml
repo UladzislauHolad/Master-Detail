@@ -1,0 +1,284 @@
+﻿<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width" />
+    <link rel="stylesheet" href="../../Content/font-awesome.min.css">
+    <link rel="stylesheet" href="../../Content/style.css">
+    <link rel="stylesheet" href="../../Content/themes/base/jquery-ui.min.css">
+    <script src="../../Scripts/jquery-1.12.4.min.js"></script>
+    <script src="../../Scripts/jquery-ui-1.12.1.min.js"></script>
+    <title>Step-4</title>
+</head>
+<body>
+    <section>
+
+        <div id="companies">
+            <button class="addCompany" onclick="showAddCompanyForm()"><i class="fa fa-plus add" aria-hidden="true"></i> Добавить команию</button>
+            @foreach (var company in ViewBag.Companies)
+    {
+
+        <div id=@company.Id class="box">
+            <h3 class="master" onclick="showPhones(this)"><span>@company.Name</span></h3>
+            <i id=@company.Id class="fa fa-edit editCompany" onclick="showChangeCompanyForm(this)" style="margin-left:5px;cursor: pointer;"></i>
+            <i id=@company.Id class="fa fa-trash" onclick="delCompany(this.id)" style="margin-left:5px;cursor: pointer;"></i>
+            <ul id="list" class="rounded" hidden="hidden"></ul>
+            <img class="loaderImage" src="~/Content/ajax-loader.gif" hidden="hidden" />
+            <button id="@company.Id" class="addToCompany" onclick="showAddPhoneForm(this.id)" hidden="hidden"><i class="fa fa-plus add" aria-hidden="true"></i> Добавить</button>
+        </div>
+}
+        </div>
+        
+        <div id="divpopup" style="display:none">
+            <input class="newPhoneName" type="text" placeholder="Введите новое название" />
+            <button class="saveChanges" onclick="saveChanges()">Сохранить</button>
+        </div>
+
+        <div id="addPhoneForm" style="display:none">
+            <input class="phoneName" type="text" placeholder="Введите новое название" />
+            <button class="addPhone" onclick="addPhone()">Сохранить</button>
+        </div>
+
+        <div id="changeCompanyForm" style="display:none">
+            <input class="newCompanyName" type="text" placeholder="Введите новое название" />
+            <button class="saveCompanyChanges" onclick="saveCompanyChanges()">Сохранить</button>
+        </div>
+
+        <div id="addCompanyForm" style="display:none">
+            <input class="companyName" type="text" placeholder="Введите новое название" />
+            <button class="addCompany" onclick="addCompany()">Сохранить</button>
+        </div>
+    </section>
+
+    <script>
+        var itemId = "";
+
+         function delCompany(id) {
+            $.ajax({
+                url: "@Url.Action("DeleteCompany")",
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json;charset=utf-8",
+                data: JSON.stringify({
+                    data: {
+                        Id: id
+                    }
+                }),
+                async: true,
+                processData: false,
+                cache: false,
+                success: function (data) {
+                    $("#" + data.Id).remove();
+                }
+            });
+        }
+
+        function addCompany() {
+            $.ajax({
+                url: "@Url.Action("AddCompany")",
+                datatype: "json",
+                type: "POST",
+                contentType: "application/json;charset=utf-8",
+                data: JSON.stringify({
+                    data: {
+                        Id: 0,
+                        Name: $(".companyName").val()
+                    }
+                }),
+                async: true,
+                cache: false,
+                processData: false,
+                cahce: false,
+                success: function (data) {
+                    $("#companies").append("<div id=" + data.Id + " class=\"box\"><h3 class=\"master\" onclick=\"showPhones(this)\"><span>" + data.Name +
+                        "</span></h3><i id=\"" + data.Id + "\" class=\"fa fa-edit editCompany\" onclick=\"showChangeCompanyForm(this)\" style=\"margin-left:5px;cursor: pointer;\" ></i>" +
+                        "<i id=\"" + data.Id + "\" class=\"fa fa-trash\" onclick=\"delCompany(this.id)\" style=\"margin-left:5px;cursor: pointer;\" ></i>" +
+                        "<ul id=\"list\" class=\"rounded\" hidden=\"hidden\"></ul>" +
+                        "<img class=\"loaderImage\" hidden=\"hidden\" src=\"/Content/ajax-loader.gif\"/>" +
+                        "<button id=\"" + data.Id + "\" class=\"addToCompany\" hidden=\"hidden\" onclick=\"showAddPhoneForm(this.id)\">" +
+                        "<i class=\"fa fa-plus add\" aria-hidden=\"true\"></i> Добавить</button></div>");
+                    $("#addCompanyForm").dialog("close");
+                }
+            });
+        }
+
+        function saveCompanyChanges() {
+            var newName = $(".newCompanyName").val();
+            $.ajax({
+                url: "@Url.Action("SaveCompanyChanges")",
+                dataType: "json",
+                contentType: "application/json;charset=utf-8",
+                type: "POST",
+                data: JSON.stringify({
+                    data: {
+                        Id: itemId,
+                        Name: newName,
+                    }
+                }),
+                async: true,
+                processData: false,
+                cache: false,
+                success: function (data) {
+                    $("#" + data.Id).find(".master").children("span").text(data.Name);
+                    $("#changeCompanyForm").dialog("close");
+                    itemId = "";
+                }
+            });
+        }
+
+        function addPhone() {
+            var phoneName = $("#addPhoneForm").children("input").val();
+            $.ajax({
+                url: "@Url.Action("AddPhone")",
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json;charset=utf-8",
+                data: JSON.stringify({
+                    data: {
+                        Id: 0,
+                        Name: phoneName,
+                        CompanyId: itemId
+                    }
+                }),
+                async: true,
+                processData: false,
+                cache: false,
+                success: function (data) {
+                    $("#" + data.CompanyId).find("ul").append("<li id=\"" + data.Id + "\"><span id=\"" + data.Id +
+                        "-name\" style=\"width:250px;display:inline-block\">" + data.Name +
+                        "</span> <i id=\"" + data.Id + "\"class=\"fa fa-edit edit\" onclick=\"showChangePhoneForm(this)\" style=\"cursor: pointer;\"></i>" +
+                        " <i id=\"" + data.Id + "\"class=\"fa fa-trash del\" onclick=\"delPhone(this.id)\" style=\"cursor: pointer;\"></i></li>");
+                    $("#addPhoneForm").dialog("close");
+                    itemId = "";
+                }
+            });
+        }
+
+        function delPhone(id) {
+            $.ajax({
+                url: "@Url.Action("DeletePhone")",
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json;charset=utf-8",
+                data: JSON.stringify({
+                    data: {
+                        Id: id
+                    }
+                }),
+                async: true,
+                processData: false,
+                cache: false,
+                success: function (data) {
+                    $("#" + data.CompanyId).find("li#" + data.Id).remove();
+                }
+            });
+        }
+
+        function saveChanges() {
+            var newName = $(".newPhoneName").val();
+            $.ajax({
+                url: "@Url.Action("SavePhonesChanges")",
+                dataType: "json",
+                contentType: "application/json;charset=utf-8",
+                type: "POST",
+                data: JSON.stringify({
+                    data: {
+                        Id: itemId,
+                        Name: newName,
+                        CompanyId: 0
+                    }
+                }),
+                async: true,
+                processData: false,
+                cache: false,
+                success: function (data) {
+                    $("#" + data.CompanyId).find("#" + data.Id + "-name").text(data.Name);
+                    $("#divpopup").dialog("close");
+                    itemId = "";
+                }
+            });
+        }
+
+        function getPhones(root) {
+            root.find(".loaderImage").show();
+            $.ajax({
+                url: "@Url.Action("GetPhones")",
+                type: "GET",
+                data: "id=" + root.attr("id"),
+                success: function (response) {
+                    if (response.length > 0) {
+                        root.find("ul").text("");
+                        for (var i = 0; i < response.length; i++) {
+                            root.find("ul").append("<li id=\"" + response[i].Id + "\">" +
+                                "<span id=\"" + response[i].Id + "-name\" style=\"width:250px;display:inline-block\">" + response[i].Name + "</span>" +
+                                " <i id=\"" + response[i].Id + "\"class=\"fa fa-edit edit\" onclick=\"showChangePhoneForm(this)\" style=\"cursor: pointer;\"></i>" +
+                                " <i id=\"" + response[i].Id + "\"class=\"fa fa-trash del\" onclick=\"delPhone(this.id)\" style=\"cursor: pointer;\"></i></li>");
+                        }
+                    }
+                },
+                complete: function () {
+                    root.find(".loaderImage").hide();
+                    root.find("ul").toggle(200);
+                    root.find(".addToCompany").show();
+                }
+            });
+        }
+        
+        function showChangePhoneForm (_this) {
+            phoneName = $(_this).prev().text();
+            itemId = $(_this).attr("id");
+            $(".newPhoneName").val(phoneName);
+            $("#divpopup").dialog({
+                title: "Изменение",
+                width: "auto",
+                height: "auto",
+                modal: true
+            });
+        }
+
+        function showAddCompanyForm() {
+            $(".companyName").val("");
+            $("#addCompanyForm").dialog({
+                title: "Добавить новую компанию",
+                width: "auto",
+                height: "auto",
+                modal: true
+            });
+        }
+
+        function showChangeCompanyForm(_this) {
+            itemId = $(_this).attr("id");
+            companyName = $(_this).prev().text();
+            $(".newCompanyName").val(companyName);
+            $("#changeCompanyForm").dialog({
+                title: "Изменение",
+                width: "auto",
+                height: "auto",
+                modal: true
+            });
+        }
+
+        function showAddPhoneForm(id) {
+            itemId = id;
+            $(".phoneName").val("");
+            $("#addPhoneForm").dialog({
+                title: "Добавить новый телефон",
+                width: "auto",
+                height: "auto",
+                modal: true
+            });
+        }
+
+        function showPhones(_this) {
+            var root = $(_this).parent();
+            if (root.find("ul").css("display") == "none") {
+                getPhones(root);
+            }
+            else {
+                root.find(".addToCompany").hide();
+                root.find("ul").toggle(200);
+            }
+        }
+        
+    </script>
+</body>
+</html>
